@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" class="zaman-mark" aria-label="ZAMAN mark">
+  <circle cx="50" cy="50" r="44" fill="none" stroke="#F2ECE1" stroke-width="2.4"/>
+  <circle cx="50" cy="50" r="38.5" fill="none" stroke="#F2ECE1" stroke-width="0.768" opacity=".7"/>
+  <rect x="48.6" y="13.5" width="2.8" height="8" fill="#F2ECE1"/>
+  <path d="M33 35 H67 L33 65 H67" fill="none" stroke="#F2ECE1" stroke-width="3.5999999999999996" stroke-linejoin="miter" stroke-linecap="square"/>
+  <circle cx="50" cy="50" r="3" fill="#F2ECE1"/>
+</svg>

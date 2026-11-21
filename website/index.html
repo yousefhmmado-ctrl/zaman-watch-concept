@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ZAMAN — زمان</title>
+<meta name="description" content="ZAMAN — ساعات أوتوماتيكية بتصميم هادئ.">
+<link rel="stylesheet" href="../brand/tokens.css">
+<link rel="stylesheet" href="site.css">
+<script src="../brand/watch.js"></script>
+<style>
+  .home { display: grid; grid-template-columns: minmax(360px, 38%) 1fr; height: calc(100svh - var(--head)); min-height: 620px; }
+
+  /* 30% — soft, muted champagne panel (logo gold, toned down and paler) */
+  .panel { background: radial-gradient(90% 70% at 85% 15%, rgba(255,250,238,.55), transparent 60%), linear-gradient(165deg, #ECDFC2 0%, var(--gold-soft) 45%, var(--gold-soft-2) 100%); color: var(--c60); padding: 64px 56px 48px; display: flex; flex-direction: column; justify-content: center; position: relative; }
+  .info { transition: opacity .35s ease, transform .35s ease; }
+  .info.swap { opacity: 0; transform: translateY(14px); }
+  .kicker { display: inline-flex; align-items: center; gap: 10px; font-family: var(--font-head-ar); font-size: 15px; font-weight: 500; color: #6B5530; }
+  .kicker::before { content: ""; width: 8px; height: 8px; transform: rotate(45deg); background: var(--champagne-deep); }
+  .name { font-family: var(--font-display); font-weight: 400; font-size: clamp(60px, 7vw, 112px); line-height: 1; letter-spacing: .08em; text-transform: uppercase; margin: 22px 0 6px; direction: ltr; text-align: right; }
+  .ar-name { font-family: var(--font-head-ar); font-size: 28px; font-weight: 500; }
+  .spec { font-size: 15px; font-weight: 300; color: rgba(13,15,19,.68); margin-top: 26px; }
+  .price { font-size: 28px; font-weight: 500; margin-top: 6px; }
+  .actions { display: flex; align-items: center; gap: 26px; margin-top: 38px; flex-wrap: wrap; }
+  .more { font-size: 15px; font-weight: 500; border-bottom: 1px solid var(--c60); padding-bottom: 2px; }
+  .dots { position: absolute; bottom: 40px; right: 56px; display: flex; gap: 8px; direction: ltr; }
+  .dots button { width: 26px; height: 3px; background: rgba(13,15,19,.18); transition: background .3s, width .3s; }
+  .dots button.on { background: var(--c60); width: 46px; }
+
+  /* 60% — midnight stage, lit by a soft glow tinted with the current dial colour */
+  @property --glow { syntax: '<color>'; inherits: true; initial-value: #1B3566; }
+  .stage { --glow: #1B3566; position: relative; overflow: hidden; background: radial-gradient(52% 46% at 50% 50%, color-mix(in srgb, var(--glow) 34%, transparent) 0%, color-mix(in srgb, var(--glow) 10%, transparent) 55%, transparent 80%), radial-gradient(120% 90% at 50% 110%, rgba(201,168,106,.06), transparent 60%), linear-gradient(180deg, #12151B 0%, var(--c60) 60%, #0A0C0F 100%); transition: --glow 1s ease; }
+  .layer { position: absolute; inset: 0; display: grid; place-items: center; will-change: transform, opacity; }
+  .layer .w { height: 90%; aspect-ratio: 200 / 340; }
+  .arrow { position: absolute; top: 50%; transform: translateY(-50%); z-index: 3; width: 64px; height: 64px; border: 1px solid var(--c10); color: var(--c10); display: grid; place-items: center; transition: background .25s, color .25s; }
+  .arrow:hover { background: var(--c10); color: var(--c60); }
+  .arrow svg { width: 22px; height: 22px; }
+  .arrow.prev { right: 40px; }
+  .arrow.next { left: 40px; }
+
+  @media (max-width: 860px) {
+    .home { grid-template-columns: 1fr; grid-template-rows: 58svh auto; height: auto; min-height: 0; }
+    .stage { order: -1; }
+    .panel { padding: 40px 16px 64px; }
+    .dots { right: 16px; bottom: 28px; }
+    .arrow { width: 48px; height: 48px; }
+    .arrow.prev { right: 16px; }
+    .arrow.next { left: 16px; }
+    .layer .w { height: 86%; }
+    .name { margin-top: 14px; }
+    .actions { margin-top: 28px; }
+  }
+</style>
+</head>
+<body data-page="home">
+
+<main class="home">
+  <section class="panel">
+    <div class="info" id="info">
+      <span class="kicker" id="kicker"></span>
+      <h1 class="name" id="name"></h1>
+      <div class="ar-name" id="arName"></div>
+      <div class="spec" id="spec"></div>
+      <div class="price" id="price"></div>
+      <div class="actions">
+        <button class="btn btn-dark" id="add">أضف إلى السلة</button>
+        <a class="more" href="collection.html">كل الساعات</a>
+      </div>
+    </div>
+    <div class="dots" id="dots"></div>
+  </section>
+
+  <section class="stage" id="stage" aria-live="polite">
+    <button class="arrow prev" id="prev" aria-label="الساعة السابقة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 5l7 7-7 7"/></svg></button>
+    <button class="arrow next" id="next" aria-label="الساعة التالية"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M15 5l-7 7 7 7"/></svg></button>
+  </section>
+</main>
+
+<script src="site.js"></script>
+<script>
+  const M = ZAMAN_MODELS;
+  const stage = document.getElementById('stage');
+  const $ = id => document.getElementById(id);
+  const ease = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+  const lerp = (a, b, x) => a + (b - a) * x;
+
+  const nowMin = () => { const d = new Date(); return d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60; };
+  const nowSec = () => { const d = new Date(); return d.getSeconds() + d.getMilliseconds() / 1000; };
+
+  let idx = Math.max(0, ORDER.indexOf((location.hash || '').slice(1)));
+  let current = null, busy = false;
+
+  // Dots
+  $('dots').innerHTML = ORDER.map((k, i) => `<button aria-label="${M[k].name}" data-i="${i}"></button>`).join('');
+  $('dots').addEventListener('click', e => { const b = e.target.closest('button'); if (b) go(+b.dataset.i); });
+
+  function makeLayer(k) {
+    const el = document.createElement('div');
+    el.className = 'layer';
+    el.innerHTML = `<div class="w">${watchSVG({ ...M[k], date: new Date().getDate() })}</div>`;
+    stage.appendChild(el);
+    return el;
+  }
+
+  function setInfo(k, i, animate) {
+    const apply = () => {
+      const m = M[k];
+      $('kicker').textContent = LINE_AR[m.line];
+      $('name').textContent = m.name;
+      $('arName').textContent = m.ar;
+      $('spec').textContent = SPEC_AR(k);
+      $('price').textContent = priceAR(m.price);
+      stage.style.setProperty('--glow', m.dial);
+      [...$('dots').children].forEach((d, j) => d.classList.toggle('on', j === i));
+      history.replaceState(null, '', '#' + k);
+    };
+    if (!animate) return apply();
+    $('info').classList.add('swap');
+    setTimeout(() => { apply(); $('info').classList.remove('swap'); }, 330);
+  }
+
+  // Change watch: the new one enters from the top-right, the hands sweep to the current time
+  function go(target) {
+    if (busy || target === idx) return;
+    busy = true;
+    const n = ORDER.length;
+    idx = (target + n) % n;
+    const k = ORDER[idx];
+    const incoming = makeLayer(k), outgoing = current;
+    const W = stage.clientWidth, H = stage.clientHeight;
+    const D = 1000, t0 = performance.now();
+    setInfo(k, idx, true);
+    const step = now => {
+      const p = Math.min(1, (now - t0) / D), e = ease(p);
+      incoming.style.opacity = Math.min(1, p * 2.2);
+      incoming.style.transform = `translate(${lerp(W * .55, 0, e)}px, ${lerp(-H * .6, 0, e)}px) rotate(${lerp(-28, 0, e)}deg) scale(${lerp(.6, 1, e)})`;
+      setHands(incoming, nowMin() - (1 - e) * 300, nowSec() - (1 - e) * 40);
+      if (outgoing) {
+        outgoing.style.opacity = 1 - Math.min(1, p * 1.6);
+        outgoing.style.transform = `translate(${lerp(0, -W * .45, e)}px, ${lerp(0, H * .55, e)}px) rotate(${lerp(0, 20, e)}deg) scale(${lerp(1, .7, e)})`;
+        setHands(outgoing, nowMin() + e * 180, nowSec() + e * 30);
+      }
+      if (p < 1) requestAnimationFrame(step);
+      else { if (outgoing) outgoing.remove(); current = incoming; busy = false; }
+    };
+    requestAnimationFrame(step);
+  }
+
+  // First watch
+  current = makeLayer(ORDER[idx]);
+  setInfo(ORDER[idx], idx, false);
+  (function intro() {
+    const t0 = performance.now();
+    const step = now => {
+      const p = Math.min(1, (now - t0) / 1400), e = ease(p);
+      current.style.opacity = Math.min(1, p * 2);
+      current.style.transform = `translateY(${lerp(40, 0, e)}px)`;
+      setHands(current, nowMin() - (1 - e) * 300, nowSec() - (1 - e) * 40);
+      if (p < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  })();
+
+  // Live ticking between transitions
+  setInterval(() => { if (!busy && current) setHands(current, nowMin(), Math.floor(nowSec())); }, 250);
+
+  $('next').onclick = () => go(idx + 1);
+  $('prev').onclick = () => go(idx - 1);
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowLeft') go(idx + 1);
+    if (e.key === 'ArrowRight') go(idx - 1);
+  });
+  let sx = null;
+  stage.addEventListener('touchstart', e => sx = e.touches[0].clientX, { passive: true });
+  stage.addEventListener('touchend', e => {
+    if (sx === null) return;
+    const dx = e.changedTouches[0].clientX - sx; sx = null;
+    if (Math.abs(dx) > 40) go(dx > 0 ? idx + 1 : idx - 1);
+  });
+  $('add').onclick = e => { addToBag(); e.target.textContent = 'تمت الإضافة ✓'; setTimeout(() => e.target.textContent = 'أضف إلى السلة', 1400); };
+</script>
+</body>
+</html>

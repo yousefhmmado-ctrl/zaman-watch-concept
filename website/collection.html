@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ZAMAN — كل الساعات</title>
+<link rel="stylesheet" href="../brand/tokens.css">
+<link rel="stylesheet" href="site.css">
+<script src="../brand/watch.js"></script>
+<style>
+  .top { padding: 70px 0 40px; display: flex; justify-content: space-between; align-items: end; gap: 24px; flex-wrap: wrap; }
+  .top h1 { font-size: 56px; font-weight: 500; line-height: 1.15; }
+  .top p { color: var(--muted-dark); margin-top: 8px; font-weight: 300; }
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tabs button { height: 42px; padding: 0 20px; border: 1px solid var(--line-dark); border-radius: 999px; color: var(--muted-dark); font-size: 14px; transition: border-color .25s, color .25s; }
+  .tabs button:hover { border-color: rgba(201,168,106,.5); color: var(--c30); }
+  .tabs button.on { background: linear-gradient(180deg, #D6B97F, var(--c10)); border-color: var(--c10); color: var(--c60); }
+
+  .list { border-top: 1px solid var(--line-dark); }
+  .row { position: relative; display: grid; grid-template-columns: 1fr minmax(260px, 38%); align-items: center; gap: 40px; padding: 40px 0; border-bottom: 1px solid var(--line-dark); opacity: 0; transform: translateY(40px); transition: opacity .8s ease, transform .8s ease; }
+  .row.in { opacity: 1; transform: none; }
+  .row.hide { display: none; }
+  .nm { font-family: var(--font-display); font-weight: 400; font-size: clamp(46px, 6.6vw, 98px); line-height: 1; letter-spacing: .08em; text-transform: uppercase; direction: ltr; text-align: right; }
+  .meta { display: flex; gap: 22px; align-items: baseline; flex-wrap: wrap; margin-top: 14px; }
+  .meta .ar { font-family: var(--font-head-ar); font-size: 26px; font-weight: 500; }
+  .meta .sp { color: var(--muted-dark); font-size: 15px; font-weight: 300; }
+  .row .bottom { display: flex; align-items: center; gap: 24px; margin-top: 26px; flex-wrap: wrap; }
+  .row .pr { font-size: 24px; font-weight: 500; }
+  .frame { --glow: #1B3566; background: radial-gradient(50% 42% at 50% 50%, color-mix(in srgb, var(--glow) 22%, transparent), transparent 75%); aspect-ratio: 4 / 5; overflow: hidden; display: grid; place-items: center; position: relative; }
+  .frame .w { width: 58%; aspect-ratio: 200 / 340; }
+  .frame .badge { position: absolute; top: 14px; right: 14px; border: 1px solid rgba(201,168,106,.45); color: var(--c10); font-size: 13px; padding: 4px 14px; border-radius: 999px; }
+  @media (max-width: 860px) {
+    .top { padding: 44px 0 28px; }
+    .top h1 { font-size: 40px; }
+    .row { grid-template-columns: 1fr; gap: 18px; padding: 28px 0; }
+    .frame { order: -1; aspect-ratio: 1; }
+    .frame .w { width: 42%; }
+  }
+
+  /* ─── Quick view modal ─── */
+  html { scrollbar-gutter: stable; }
+  html.qv-lock, html.qv-lock body { overflow: hidden; }
+  .qv { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 32px; }
+  .qv[hidden] { display: none; }
+  .qv-back { position: absolute; inset: 0; background: radial-gradient(80% 70% at 50% 45%, rgba(26,29,35,.82), rgba(5,6,8,.94)); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); opacity: 0; transition: opacity .55s ease; }
+  .qv.open .qv-back { opacity: 1; }
+  .qv-box { --glow: #1B3566; position: relative; width: min(1120px, 100%); max-height: calc(100dvh - 64px); display: grid; grid-template-columns: minmax(300px, 40%) 1fr; overflow: hidden; border: 1px solid rgba(201,168,106,.22); box-shadow: 0 40px 120px rgba(0,0,0,.55); }
+  .qv-box { opacity: 0; transition: opacity .45s ease; background: #0D0F13; }
+  .qv.open .qv-box { opacity: 1; }
+  .qv-info > * { opacity: 0; transform: translateX(22px); transition: opacity .5s ease, transform .6s cubic-bezier(.2,.8,.2,1); }
+  .qv.open .qv-info > * { opacity: 1; transform: none; }
+  .qv.open .qv-info > :nth-child(2) { transition-delay: .06s; } .qv.open .qv-info > :nth-child(3) { transition-delay: .1s; }
+  .qv.open .qv-info > :nth-child(4) { transition-delay: .14s; } .qv.open .qv-info > :nth-child(5) { transition-delay: .18s; }
+  .qv.open .qv-info > :nth-child(6) { transition-delay: .22s; } .qv.open .qv-info > :nth-child(7) { transition-delay: .26s; }
+  .qv-stage { background: radial-gradient(55% 48% at 50% 46%, color-mix(in srgb, var(--glow) 34%, transparent), transparent 78%), linear-gradient(180deg, #161920, #0B0D10); }
+  /* info panel mirrors the home page: soft muted champagne */
+  .qv-info { background: radial-gradient(90% 70% at 85% 15%, rgba(255,250,238,.55), transparent 60%), linear-gradient(165deg, #ECDFC2 0%, var(--gold-soft) 45%, var(--gold-soft-2) 100%); color: var(--c60); padding: 56px 44px 40px; display: flex; flex-direction: column; justify-content: center; overflow-y: auto; }
+  .qv-kicker { display: inline-flex; align-items: center; gap: 10px; font-family: var(--font-head-ar); font-size: 15px; color: #6B5530; }
+  .qv-kicker::before { content: ""; width: 8px; height: 8px; transform: rotate(45deg); background: var(--champagne-deep); }
+  .qv-name { font-family: var(--font-display); font-weight: 400; font-size: clamp(48px, 5.4vw, 84px); line-height: 1; letter-spacing: .08em; text-transform: uppercase; direction: ltr; text-align: right; margin: 18px 0 4px; }
+  .qv-ar { font-family: var(--font-head-ar); font-size: 26px; font-weight: 500; }
+  .qv-spec { font-size: 15px; font-weight: 300; color: rgba(13,15,19,.7); margin-top: 20px; }
+  .qv-desc { font-size: 15px; font-weight: 300; color: rgba(13,15,19,.78); margin-top: 10px; max-width: 34ch; }
+  .qv-price { font-size: 28px; font-weight: 500; margin-top: 14px; }
+  .qv-info .btn { margin-top: 30px; align-self: flex-start; }
+  .qv-close { position: absolute; top: 16px; left: 16px; z-index: 5; width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgba(201,168,106,.45); color: var(--c10); display: grid; place-items: center; background: rgba(13,15,19,.5); transition: background .25s, color .25s; }
+  .qv-close:hover { background: var(--c10); color: var(--c60); }
+  .qv-close svg { width: 18px; height: 18px; }
+  .qv-stage { position: relative; min-height: min(680px, calc(100dvh - 66px)); display: grid; grid-template-rows: 1fr auto; overflow: hidden; touch-action: pan-y; }
+  .qv-views { position: relative; }
+  .qv-view { position: absolute; inset: 0; display: grid; place-items: center; opacity: 0; transition: opacity .5s ease; pointer-events: none; }
+  .qv-view.on { opacity: 1; }
+  .qv-view .w { height: 92%; aspect-ratio: 200 / 340; }
+  .qv-view img { width: 84%; height: 84%; object-fit: contain; }
+  .qv-live.flying .w { visibility: hidden; }
+  .qv-nav { position: absolute; top: 50%; transform: translateY(-50%); z-index: 3; width: 46px; height: 46px; border: 1px solid rgba(201,168,106,.55); color: var(--c10); display: grid; place-items: center; transition: background .25s, color .25s; }
+  .qv-nav:hover { background: var(--c10); color: var(--c60); }
+  .qv-nav svg { width: 18px; height: 18px; }
+  .qv-nav.prev { right: 20px; } .qv-nav.next { left: 20px; }
+  .qv-thumbs { display: flex; justify-content: center; gap: 10px; padding: 0 16px 22px; position: relative; z-index: 3; }
+  .qv-thumbs button { width: 66px; height: 66px; border: 1px solid var(--line-dark); background: rgba(242,236,225,.03); display: grid; place-items: center; overflow: hidden; transition: border-color .25s, background .25s; }
+  .qv-thumbs button.on { border-color: var(--c10); background: rgba(201,168,106,.08); }
+  .qv-thumbs img { width: 100%; height: 100%; object-fit: contain; }
+  .qv-thumbs .zaman-watch { height: 62px; width: auto; }
+  .qv-ghost { position: fixed; z-index: 110; transform-origin: 0 0; pointer-events: none; will-change: transform; }
+  .qv-ghost .zaman-watch { width: 100%; height: 100%; }
+  .frame .w.lifted { visibility: hidden; }
+  @media (max-width: 860px) {
+    .qv { padding: 0; }
+    .qv-box { grid-template-columns: 1fr; max-height: 100dvh; height: 100dvh; overflow-y: auto; border: 0; }
+    .qv-stage { order: -1; min-height: 0; height: 62dvh; }
+    .qv-info { padding: 30px 16px 40px; overflow: visible; justify-content: flex-start; }
+    .qv-info > * { transform: translateY(18px); }
+    .qv-nav { width: 40px; height: 40px; }
+    .qv-nav.prev { right: 12px; } .qv-nav.next { left: 12px; }
+    .qv-thumbs button { width: 54px; height: 54px; }
+    .qv-thumbs .zaman-watch { height: 50px; }
+    .qv-thumbs { padding-bottom: 14px; }
+    .qv-close { top: 12px; left: 12px; }
+  }
+</style>
+</head>
+<body data-page="collection">
+<main class="wrap">
+  <div class="top">
+    <h1>كل الساعات</h1>
+    <div class="tabs" id="tabs">
+      <button class="on" data-f="all">الكل</button>
+      <button data-f="Leather">جلد</button>
+      <button data-f="Steel">ستيل</button>
+      <button data-f="Limited">محدود</button>
+    </div>
+  </div>
+  <div class="list" id="list"></div>
+  <div style="height:80px"></div>
+</main>
+<div class="qv" id="qv" hidden>
+  <div class="qv-back" data-close></div>
+  <div class="qv-box" role="dialog" aria-modal="true" aria-labelledby="qvName">
+    <button class="qv-close" type="button" data-close aria-label="إغلاق"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <div class="qv-info">
+      <span class="qv-kicker" id="qvLine"></span>
+      <h2 class="qv-name" id="qvName"></h2>
+      <div class="qv-ar" id="qvAr"></div>
+      <div class="qv-spec" id="qvSpec"></div>
+      <p class="qv-desc">علبة ٤٠ مم بزجاج سافير مقاوم للخدش، وحركة أوتوماتيكية تعمل بحركة معصمك. مقاومة للماء حتى ٥٠ متراً.</p>
+      <div class="qv-price" id="qvPrice"></div>
+      <button class="btn btn-dark" type="button" id="qvAdd">أضف إلى السلة</button>
+    </div>
+    <div class="qv-stage" id="qvStage">
+      <div class="qv-views" id="qvViews"></div>
+      <button class="qv-nav prev" type="button" id="qvPrev" aria-label="الزاوية السابقة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 5l7 7-7 7"/></svg></button>
+      <button class="qv-nav next" type="button" id="qvNext" aria-label="الزاوية التالية"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <div class="qv-thumbs" id="qvThumbs" role="tablist" aria-label="زوايا الساعة"></div>
+    </div>
+  </div>
+</div>
+<script src="site.js"></script>
+<script>
+  const M = ZAMAN_MODELS;
+  const list = document.getElementById('list');
+  list.innerHTML = ORDER.map(k => {
+    const m = M[k];
+    return `<article class="row" data-tag="${m.tag}" data-k="${k}">
+      <div>
+        <h2 class="nm">${m.name}</h2>
+        <div class="meta"><span class="ar">${m.ar}</span><span class="sp">${LINE_AR[m.line]} · ${SPEC_AR(k)}</span></div>
+        <div class="bottom"><span class="pr">${priceAR(m.price)}</span><button class="btn btn-gold" type="button" data-open="${k}" aria-haspopup="dialog">عرض الساعة</button></div>
+      </div>
+      <div class="frame" style="--glow:${m.dial}">${m.line === 'Limited' ? '<span class="badge">إصدار محدود</span>' : ''}<div class="w">${watchSVG({ ...m, shadow: true })}</div></div>
+    </article>`;
+  }).join('');
+  const rows = [...list.children];
+
+  // Filters
+  const tabs = document.getElementById('tabs');
+  function filter(f) {
+    [...tabs.children].forEach(b => b.classList.toggle('on', b.dataset.f === f));
+    rows.forEach(r => r.classList.toggle('hide', f !== 'all' && r.dataset.tag !== f));
+  }
+  tabs.addEventListener('click', e => { const b = e.target.closest('button'); if (b) filter(b.dataset.f); });
+  if (location.hash === '#Limited') filter('Limited');
+
+  // Reveal on scroll
+  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: .12 });
+  rows.forEach(r => io.observe(r));
+
+  // Hands move with scrolling
+  let y = scrollY, shown = scrollY, ticking = false;
+  const svgs = rows.map(r => r.querySelector('svg'));
+  function draw() {
+    shown += (y - shown) * .12;
+    svgs.forEach((s, i) => {
+      const base = 10 * 60 + 9 + i * 7;
+      setHands(s, base + shown * 0.35, 30 + shown * 0.12 + i * 5);
+    });
+    if (Math.abs(y - shown) > .5) requestAnimationFrame(draw); else ticking = false;
+  }
+  addEventListener('scroll', () => { y = scrollY; if (!ticking) { ticking = true; requestAnimationFrame(draw); } }, { passive: true });
+  draw();
+
+  // ─── Quick view: shared-element (FLIP) transition + several angles ───
+  const qv = document.getElementById('qv'), qvBox = qv.querySelector('.qv-box');
+  const $q = id => document.getElementById(id);
+  const ANG = new URL('../brand/watches/angles/', document.querySelector('script[src*="watch.js"]').src).href;
+  const VIEWS = [
+    { id: 'live', label: 'من الأمام' },
+    { id: 'hero', label: 'زاوية ثلاثة أرباع' },
+    { id: 'side', label: 'من الجانب' },
+    { id: 'dial', label: 'الميناء عن قرب' }
+  ];
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+  const EASE = 'cubic-bezier(.2,.8,.2,1)', DUR = 650;
+  const rowTime = i => ({ min: 10 * 60 + 9 + i * 7 + shown * 0.35, sec: 30 + shown * 0.12 + i * 5 });
+  const nowT = () => { const d = new Date(); return { min: d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60, sec: d.getSeconds() + d.getMilliseconds() / 1000 }; };
+  const fwd = (from, to, period) => { while (to < from) to += period; return to; };   // hands only sweep forward
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  let qvKey = null, qvRow = null, qvView = 0, qvViews = [], qvTick = null, qvOpener = null, qvBusy = false;
+
+  function buildViews(k) {
+    const m = M[k];
+    $q('qvViews').innerHTML = VIEWS.map((v, i) => v.id === 'live'
+      ? `<div class="qv-view qv-live on" data-i="${i}"><div class="w">${watchSVG({ ...m, shadow: true })}</div></div>`
+      : `<div class="qv-view" data-i="${i}"><img src="${ANG}${k}-${v.id}.webp" alt="${m.name} — ${v.label}" decoding="async"></div>`).join('');
+    $q('qvThumbs').innerHTML = VIEWS.map((v, i) => `<button type="button" role="tab" data-i="${i}" aria-label="${v.label}" class="${i ? '' : 'on'}" aria-selected="${!i}">${v.id === 'live' ? watchSVG({ ...m }) : `<img src="${ANG}${k}-${v.id}.webp" alt="" loading="lazy">`}</button>`).join('');
+    qvViews = [...$q('qvViews').children];
+    // An angle that hasn't been rendered yet just drops out of the gallery
+    $q('qvViews').querySelectorAll('img').forEach(img => img.addEventListener('error', () => {
+      const i = img.parentNode.dataset.i;
+      img.parentNode.remove();
+      const t = $q('qvThumbs').querySelector(`[data-i="${i}"]`); if (t) t.remove();
+      qvViews = [...$q('qvViews').children];
+      navVisible();
+    }));
+    qvView = 0; navVisible();
+  }
+  function navVisible() { const many = qvViews.length > 1; $q('qvPrev').hidden = $q('qvNext').hidden = $q('qvThumbs').hidden = !many; }
+  function showView(pos) {
+    const n = qvViews.length; if (!n) return;
+    qvView = (pos + n) % n;
+    qvViews.forEach((v, j) => v.classList.toggle('on', j === qvView));
+    const di = qvViews[qvView].dataset.i;
+    [...$q('qvThumbs').children].forEach(b => { const on = b.dataset.i === di; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
+  }
+
+  function ghostFrom(svg, rect) {
+    const g = document.createElement('div');
+    g.className = 'qv-ghost';
+    g.innerHTML = svg.outerHTML;
+    Object.assign(g.style, { left: rect.left + 'px', top: rect.top + 'px', width: rect.width + 'px', height: rect.height + 'px' });
+    document.body.appendChild(g);
+    return g;
+  }
+  // FLIP "invert": the transform that puts a box laid out at `b` onto rect `a`
+  const invert = (a, b) => `translate(${a.left - b.left}px, ${a.top - b.top}px) scale(${a.width / b.width}, ${a.height / b.height})`;
+  function sweepHands(el, t0, t1, dur) {
+    const start = performance.now();
+    (function step(now) {
+      const p = Math.min(1, (now - start) / dur), e = easeOut(p);
+      setHands(el, t0.min + (t1.min - t0.min) * e, t0.sec + (t1.sec - t0.sec) * e);
+      if (p < 1 && el.isConnected) requestAnimationFrame(step);
+    })(start);
+  }
+
+  // Run once when the animation ends — with a timer fallback, so a tab that isn't painting frames never gets stuck
+  function whenDone(anim, dur, fn) {
+    let ran = false;
+    const go = () => { if (ran) return; ran = true; anim.cancel(); fn(); };
+    anim.finished.then(go, go);
+    setTimeout(go, dur + 250);
+  }
+
+  function openQV(k, opener) {
+    if (qvBusy || qvKey) return;
+    const m = M[k], i = ORDER.indexOf(k);
+    qvKey = k; qvOpener = opener; qvRow = rows[i];
+    $q('qvLine').textContent = LINE_AR[m.line];
+    $q('qvName').textContent = m.name;
+    $q('qvAr').textContent = m.ar;
+    $q('qvSpec').textContent = SPEC_AR(k);
+    $q('qvPrice').textContent = priceAR(m.price);
+    qvBox.style.setProperty('--glow', m.dial);
+    buildViews(k);
+    const live = qvViews[0], liveSvg = live.querySelector('svg');
+    const rowW = qvRow.querySelector('.frame .w');
+    const from = rowW.getBoundingClientRect();     // First
+    const t0 = rowTime(i);
+    setHands(liveSvg, t0.min, t0.sec);
+
+    document.documentElement.classList.add('qv-lock');
+    qv.hidden = false;
+    const to = live.querySelector('.w').getBoundingClientRect();   // Last
+    requestAnimationFrame(() => qv.classList.add('open'));
+    qv.querySelector('.qv-close').focus({ preventScroll: true });
+
+    const tNow = nowT(), tEnd = { min: fwd(t0.min, tNow.min, 720), sec: fwd(t0.sec, tNow.sec, 60) };
+    if (reduce.matches) { setHands(liveSvg, tNow.min, tNow.sec); startTick(); return; }
+
+    qvBusy = true;
+    const ghost = ghostFrom(rowW.querySelector('svg'), to);
+    rowW.classList.add('lifted'); live.classList.add('flying');
+    const anim = ghost.animate([{ transform: invert(from, to) }, { transform: 'none' }], { duration: DUR, easing: EASE, fill: 'both' });  // Invert → Play
+    sweepHands(ghost, t0, tEnd, DUR);
+    whenDone(anim, DUR, () => {
+      const t = nowT(); setHands(liveSvg, t.min, t.sec);
+      live.classList.remove('flying'); ghost.remove(); qvBusy = false; startTick();
+    });
+  }
+
+  function startTick() {
+    clearInterval(qvTick);
+    qvTick = setInterval(() => {
+      const v = qvViews[0]; if (!v || !v.classList.contains('qv-live')) return;
+      const t = nowT(); setHands(v.querySelector('svg'), t.min, Math.floor(t.sec));
+    }, 250);
+  }
+
+  function closeQV() {
+    if (!qvKey || qvBusy) return;
+    clearInterval(qvTick);
+    const rowW = qvRow.querySelector('.frame .w'), i = ORDER.indexOf(qvKey);
+    const finish = () => {
+      qv.hidden = true; qv.classList.remove('open');
+      document.documentElement.classList.remove('qv-lock');
+      rowW.classList.remove('lifted');
+      setHands(rowW.querySelector('svg'), rowTime(i).min, rowTime(i).sec);
+      if (qvOpener) qvOpener.focus({ preventScroll: true });
+      qvKey = qvRow = null;
+    };
+    if (reduce.matches) { qv.classList.remove('open'); setTimeout(finish, 300); return; }
+    // Fly back into the row from the front view
+    showView(0);
+    const live = qvViews[0];
+    const from = live.querySelector('.w').getBoundingClientRect(), to = rowW.getBoundingClientRect();
+    qvBusy = true;
+    const ghost = ghostFrom(live.querySelector('svg'), from);
+    live.classList.add('flying');
+    qv.classList.remove('open');
+    const t0 = nowT(), tr = rowTime(i), tEnd = { min: fwd(t0.min, tr.min, 720), sec: fwd(t0.sec, tr.sec, 60) };
+    const anim = ghost.animate([{ transform: 'none' }, { transform: invert(to, from) }], { duration: DUR * .9, easing: EASE, fill: 'both' });
+    sweepHands(ghost, t0, tEnd, DUR * .9);
+    whenDone(anim, DUR * .9, () => { qvBusy = false; finish(); ghost.remove(); });
+  }
+
+  list.addEventListener('click', e => { const b = e.target.closest('[data-open]'); if (b) openQV(b.dataset.open, b); });
+  qv.addEventListener('click', e => { if (e.target.closest('[data-close]')) closeQV(); });
+  $q('qvPrev').onclick = () => showView(qvView - 1);
+  $q('qvNext').onclick = () => showView(qvView + 1);
+  $q('qvThumbs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) showView(qvViews.findIndex(v => v.dataset.i === b.dataset.i)); });
+  $q('qvAdd').onclick = e => { addToBag(); e.target.textContent = 'تمت الإضافة ✓'; setTimeout(() => e.target.textContent = 'أضف إلى السلة', 1400); };
+  let qsx = null;
+  $q('qvStage').addEventListener('touchstart', e => qsx = e.touches[0].clientX, { passive: true });
+  $q('qvStage').addEventListener('touchend', e => {
+    if (qsx === null) return;
+    const dx = e.changedTouches[0].clientX - qsx; qsx = null;
+    if (Math.abs(dx) > 40) showView(dx > 0 ? qvView + 1 : qvView - 1);
+  });
+  document.addEventListener('keydown', e => {
+    if (!qvKey) return;
+    if (e.key === 'Escape') { e.preventDefault(); closeQV(); }
+    else if (e.key === 'ArrowLeft') showView(qvView + 1);
+    else if (e.key === 'ArrowRight') showView(qvView - 1);
+    else if (e.key === 'Tab') {   // focus trap
+      const f = [...qvBox.querySelectorAll('button, [href], [tabindex]:not([tabindex="-1"])')].filter(el => !el.closest('[hidden]') && el.offsetParent !== null);
+      if (!f.length) return;
+      const first = f[0], last = f[f.length - 1];
+      if (!qvBox.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
+      else if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+  });
+</script>
+</body>
+</html>
